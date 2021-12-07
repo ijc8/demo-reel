@@ -1,5 +1,6 @@
 {
     "title": "Caution: Demo Reel",
+    "artist": "Ian Clester",
     "cover": "album_art.svg",
     "tracks": ["bundles/pd-thing2","bundles/beat","bundles/wav","bundles/stria"]
 }
