@@ -1,5 +1,5 @@
 {
     "title": "Caution: Demo Reel",
     "cover": "album_art.svg",
-    "tracks": ["bundles/pd-thing2","bundles/beat","bundles/wav"]
+    "tracks": ["bundles/pd-thing2","bundles/beat","bundles/wav","bundles/stria"]
 }
