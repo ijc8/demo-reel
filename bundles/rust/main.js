@@ -2,7 +2,7 @@ let wasm
 const wasmPromise = loadWasm()
 
 async function loadWasm() {
-    const { instance } = await WebAssembly.instantiateStreaming(fetch("compositions/rust/tune_bg.wasm"))
+    const { instance } = await WebAssembly.instantiateStreaming(fetch(self.path + "tune_bg.wasm"))
     wasm = instance.exports
 }
 
@@ -32,12 +32,14 @@ function passArrayF32ToWasm0(arg, malloc) {
 }
 /**
 * @param {Float32Array} output
+* @returns {number}
 */
 function process(output) {
     try {
         var ptr0 = passArrayF32ToWasm0(output, wasm.__wbindgen_malloc);
         var len0 = WASM_VECTOR_LEN;
-        wasm.process(ptr0, len0);
+        var ret = wasm.process(ptr0, len0);
+        return ret >>> 0;
     } finally {
         output.set(getFloat32Memory0().subarray(ptr0 / 4, ptr0 / 4 + len0));
         wasm.__wbindgen_free(ptr0, len0 * 4);

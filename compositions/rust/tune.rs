@@ -12,6 +12,8 @@ static freq: f32 = 200.0;
 static mut sample_rate: u32 = 0;
 static mut phase: f32 = 0.0;
 
+// TODO: Wrap unsafe parts in safe Alternator API.
+
 #[wasm_bindgen]
 pub fn setup(_sample_rate: u32) {
     unsafe {
@@ -21,11 +23,12 @@ pub fn setup(_sample_rate: u32) {
 }
 
 #[wasm_bindgen]
-pub fn process(output: &mut [f32]) {
+pub fn process(output: &mut [f32]) -> usize {
     for i in 0..output.len() {
         unsafe {
             output[i] = phase.sin();
             phase += 2.0*std::f32::consts::PI*freq/sample_rate as f32;
         }
     }
+    return output.len()
 }
