@@ -1,6 +1,8 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
+use aleatora::{osc, SampleRateDependent};
+use std::iter::repeat;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -8,26 +10,28 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
-static freq: f32 = 200.0;
-static mut sample_rate: u32 = 0;
-static mut phase: f32 = 0.0;
+static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 
 // TODO: Wrap unsafe parts in safe Alternator API.
+// Ideally, something will automatically fill in and export the `setup` and `process` functions.
+// The user of the library can then just write `main` and call `play` at some point to register the stream.
+// (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
 #[wasm_bindgen]
-pub fn setup(_sample_rate: u32) {
+pub fn setup(_sample_rate: f64) {
+    aleatora::set_sample_rate(_sample_rate);
+    let stereo = osc(repeat(400.hz())).zip(osc(repeat(600.hz())));
     unsafe {
-        sample_rate = _sample_rate;
-        phase = 0.0;
+        ITER = Some(Box::new(stereo.map(|t| [t.0, t.1])));
     }
 }
 
 #[wasm_bindgen]
 pub fn process(output: &mut [f32]) -> usize {
-    for i in 0..output.len() {
-        unsafe {
-            output[i] = phase.sin();
-            phase += 2.0*std::f32::consts::PI*freq/sample_rate as f32;
+    let iter = unsafe { ITER.as_mut().unwrap() };
+    for frame in output.chunks_mut(2) {
+        for (out, sample) in frame.iter_mut().zip(iter.next().unwrap()) {
+            *out = sample as f32;
         }
     }
     return output.len()
