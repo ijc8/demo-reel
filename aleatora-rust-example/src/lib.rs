@@ -17,12 +17,16 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 // The user of the library can then just write `main` and call `play` at some point to register the stream.
 // (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
+pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
+    osc(repeat(400.hz())).zip(osc(repeat(600.hz()))).map(|t| [t.0, t.1])
+}
+
 #[wasm_bindgen]
 pub fn setup(_sample_rate: f64) {
     aleatora::set_sample_rate(_sample_rate);
-    let stereo = osc(repeat(400.hz())).zip(osc(repeat(600.hz())));
+    let comp = make_composition();
     unsafe {
-        ITER = Some(Box::new(stereo.map(|t| [t.0, t.1])));
+        ITER = Some(Box::new(comp));
     }
 }
 
