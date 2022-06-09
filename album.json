@@ -2,5 +2,5 @@
     "title": "Caution: Demo Reel",
     "artist": "Ian Clester",
     "cover": "album_art.svg",
-    "tracks": ["bundles/warmup","bundles/warmup-video","bundles/pd-thing2","bundles/vorbis","bundles/stria","bundles/433","bundles/beat","bundles/infinite-snowflake","bundles/rust","aleatora-rust-example/pkg"]
+    "tracks": ["bundles/warmup","bundles/pd-thing2","bundles/vorbis","bundles/stria","bundles/433","bundles/beat","bundles/infinite-snowflake","bundles/rust","aleatora-rust-example/pkg"]
 }
