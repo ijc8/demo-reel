@@ -1,7 +1,7 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use aleatora::{osc, SampleRateDependent};
+use aleatora::{osc, pan, SampleRateDependent, Stream};
 use std::iter::repeat;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -18,7 +18,9 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 // (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
 pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
-    osc(repeat(400.hz())).zip(osc(repeat(600.hz()))).map(|t| [t.0, t.1])
+    let a = pan(osc(repeat(400.hz())).mul(repeat(0.5)), osc(repeat(0.25.hz())).add(repeat(1.0)).mul(repeat(0.5)));
+    let b = pan(osc(repeat(800.hz())).mul(repeat(0.25)), osc(repeat(0.5.hz())).add(repeat(-1.0)).mul(repeat(0.5)));
+    a.zip(b).map(|(x, y)| [x[0] + y[0], x[1] + y[1]])
 }
 
 #[wasm_bindgen]
