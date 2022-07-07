@@ -1,7 +1,7 @@
 mod utils;
 
 use wasm_bindgen::prelude::*;
-use aleatora::{osc, pan, SampleRateDependent, Stream};
+use aleatora::{osc, pan, SampleRateDependent, Stream, wave, flip};
 use std::iter::repeat;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
@@ -18,9 +18,14 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 // (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
 pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
-    let a = pan(osc(repeat(400.hz())).mul(repeat(0.5)), osc(repeat(0.25.hz())).add(repeat(1.0)).mul(repeat(0.5)));
-    let b = pan(osc(repeat(800.hz())).mul(repeat(0.25)), osc(repeat(0.5.hz())).add(repeat(-1.0)).mul(repeat(0.5)));
-    a.zip(b).map(|(x, y)| [x[0] + y[0], x[1] + y[1]])
+    let zero = include_bytes!("../zero.wav").as_slice();
+    let zero = wave::load_mono(zero).into_iter().map(|x| [x, 0.0]);
+    let one = include_bytes!("../one.wav").as_slice();
+    let one = wave::load_mono(one).into_iter().map(|x| [0.0, x]);
+    flip(zero, one).cycle()
+    // let a = pan(osc(repeat(400.hz())).mul(repeat(0.5)), osc(repeat(0.25.hz())).add(repeat(1.0)).mul(repeat(0.5)));
+    // let b = pan(osc(repeat(800.hz())).mul(repeat(0.25)), osc(repeat(0.5.hz())).add(repeat(-1.0)).mul(repeat(0.5)));
+    // a.zip(b).map(|(x, y)| [x[0] + y[0], x[1] + y[1]])
 }
 
 #[wasm_bindgen]
