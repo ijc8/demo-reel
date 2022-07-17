@@ -1,20 +1,10 @@
 mod utils;
 
+use js_sys::{Uint8Array, Object, Map, Array};
 use wasm_bindgen::prelude::*;
 use aleatora::{osc, pan, SampleRateDependent, Stream, wave, flip};
 use web_sys::{WorkerGlobalScope, Worker, console};
-use std::iter::repeat;
-
-static TEST_STRING: &str = r#"{
-    "nodes": ["start.wav", "verse1-1.wav", "verse1-2.wav", "chorus.wav"],
-    "edges": {
-        "0": { "1": 0.5, "2": 0.5 },
-        "1": { "3": 1.0 },
-        "2": { "3": 1.0 },
-        "3": { "0": 0.7, "4": 0.3 }
-    }
-}
-"#;
+use std::{iter::repeat, collections::HashMap};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -29,9 +19,13 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 // The user of the library can then just write `main` and call `play` at some point to register the stream.
 // (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
-pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
+pub fn make_composition(fs: HashMap<String, Vec<u8>>) -> impl Iterator<Item = [f64; 2]> {
     use serde_json::{Value,Value::Object};
-    let v: Value = serde_json::from_str(TEST_STRING).unwrap();
+    let bytes = &fs["graph.json"];
+    let text = std::str::from_utf8(bytes).unwrap();
+    console::log_2(&"Contents of graph.json".into(), &text.into());
+
+    let v: Value = serde_json::from_slice(bytes).unwrap();
     console::log_1(&v.to_string().into());
     let map = v.as_object().unwrap();
     // TODO: Load audio using `nodes`, build graph using `edges`.
@@ -62,10 +56,21 @@ pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
 }
 
 #[wasm_bindgen]
-pub fn setup(sample_rate: f64, path: &str) {
+pub fn setup(sample_rate: f64, files: &Object) {
+    console::log_2(&"type?".into(), &files);
+    let mut fs = HashMap::<String, Vec<u8>>::new();
+    for entry in Object::entries(files).iter() {
+        let test: Array = entry.into();
+        let mut pair = test.to_vec().into_iter();
+        let filename = pair.next().unwrap();
+        let buffer = pair.next().unwrap();
+        let v: Vec<u8> = Uint8Array::from(buffer).to_vec();
+        console::log_2(&filename, &(v.len() as u32).into());
+        fs.insert(filename.as_string().unwrap(), v);
+    }
+
     aleatora::set_sample_rate(sample_rate);
-    console::log_2(&"path".into(), &path.into());
-    let comp = make_composition();
+    let comp = make_composition(fs);
     unsafe {
         ITER = Some(Box::new(comp));
     }

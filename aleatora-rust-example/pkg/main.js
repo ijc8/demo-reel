@@ -3,38 +3,13 @@ let wasm_bindgen;
     const __exports = {};
     let wasm;
 
-    const cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
-
-    cachedTextDecoder.decode();
-
-    let cachedUint8Memory0;
-    function getUint8Memory0() {
-        if (cachedUint8Memory0.byteLength === 0) {
-            cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
-        }
-        return cachedUint8Memory0;
-    }
-
-    function getStringFromWasm0(ptr, len) {
-        return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-    }
-
     const heap = new Array(32).fill(undefined);
 
     heap.push(undefined, null, true, false);
 
-    let heap_next = heap.length;
-
-    function addHeapObject(obj) {
-        if (heap_next === heap.length) heap.push(heap.length + 1);
-        const idx = heap_next;
-        heap_next = heap[idx];
-
-        heap[idx] = obj;
-        return idx;
-    }
-
 function getObject(idx) { return heap[idx]; }
+
+let heap_next = heap.length;
 
 function dropObject(idx) {
     if (idx < 36) return;
@@ -48,32 +23,29 @@ function takeObject(idx) {
     return ret;
 }
 
-function makeMutClosure(arg0, arg1, dtor, f) {
-    const state = { a: arg0, b: arg1, cnt: 1, dtor };
-    const real = (...args) => {
-        // First up with a closure we increment the internal reference
-        // count. This ensures that the Rust closure environment won't
-        // be deallocated while we're invoking it.
-        state.cnt++;
-        const a = state.a;
-        state.a = 0;
-        try {
-            return f(a, state.b, ...args);
-        } finally {
-            if (--state.cnt === 0) {
-                wasm.__wbindgen_export_0.get(state.dtor)(a, state.b);
+const cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
 
-            } else {
-                state.a = a;
-            }
-        }
-    };
-    real.original = state;
+cachedTextDecoder.decode();
 
-    return real;
+let cachedUint8Memory0;
+function getUint8Memory0() {
+    if (cachedUint8Memory0.byteLength === 0) {
+        cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
+    }
+    return cachedUint8Memory0;
 }
-function __wbg_adapter_18(arg0, arg1, arg2) {
-    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hc922b049e4550c0d(arg0, arg1, addHeapObject(arg2));
+
+function getStringFromWasm0(ptr, len) {
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+}
+
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
 }
 
 let WASM_VECTOR_LEN = 0;
@@ -130,14 +102,64 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
+
+function isLikeNone(x) {
+    return x === undefined || x === null;
+}
+
+let cachedInt32Memory0;
+function getInt32Memory0() {
+    if (cachedInt32Memory0.byteLength === 0) {
+        cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachedInt32Memory0;
+}
+
+function makeMutClosure(arg0, arg1, dtor, f) {
+    const state = { a: arg0, b: arg1, cnt: 1, dtor };
+    const real = (...args) => {
+        // First up with a closure we increment the internal reference
+        // count. This ensures that the Rust closure environment won't
+        // be deallocated while we're invoking it.
+        state.cnt++;
+        const a = state.a;
+        state.a = 0;
+        try {
+            return f(a, state.b, ...args);
+        } finally {
+            if (--state.cnt === 0) {
+                wasm.__wbindgen_export_2.get(state.dtor)(a, state.b);
+
+            } else {
+                state.a = a;
+            }
+        }
+    };
+    real.original = state;
+
+    return real;
+}
+function __wbg_adapter_22(arg0, arg1, arg2) {
+    wasm._dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__hc922b049e4550c0d(arg0, arg1, addHeapObject(arg2));
+}
+
+let stack_pointer = 32;
+
+function addBorrowedObject(obj) {
+    if (stack_pointer == 1) throw new Error('out of js stack');
+    heap[--stack_pointer] = obj;
+    return stack_pointer;
+}
 /**
 * @param {number} sample_rate
-* @param {string} path
+* @param {object} files
 */
-__exports.setup = function(sample_rate, path) {
-    const ptr0 = passStringToWasm0(path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.setup(sample_rate, ptr0, len0);
+__exports.setup = function(sample_rate, files) {
+    try {
+        wasm.setup(sample_rate, addBorrowedObject(files));
+    } finally {
+        heap[stack_pointer++] = undefined;
+    }
 };
 
 let cachedFloat32Memory0;
@@ -216,12 +238,24 @@ async function load(module, imports) {
 function getImports() {
     const imports = {};
     imports.wbg = {};
+    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
+        takeObject(arg0);
+    };
     imports.wbg.__wbindgen_string_new = function(arg0, arg1) {
         const ret = getStringFromWasm0(arg0, arg1);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_object_drop_ref = function(arg0) {
-        takeObject(arg0);
+    imports.wbg.__wbindgen_number_new = function(arg0) {
+        const ret = arg0;
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbindgen_string_get = function(arg0, arg1) {
+        const obj = getObject(arg1);
+        const ret = typeof(obj) === 'string' ? obj : undefined;
+        var ptr0 = isLikeNone(ret) ? 0 : passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        getInt32Memory0()[arg0 / 4 + 1] = len0;
+        getInt32Memory0()[arg0 / 4 + 0] = ptr0;
     };
     imports.wbg.__wbg_log_7761a8b8a8c1864e = function(arg0) {
         console.log(getObject(arg0));
@@ -276,6 +310,14 @@ function getImports() {
         const ret = getObject(arg0).msCrypto;
         return addHeapObject(ret);
     };
+    imports.wbg.__wbg_get_f0f4f1608ebf633e = function(arg0, arg1) {
+        const ret = getObject(arg0)[arg1 >>> 0];
+        return addHeapObject(ret);
+    };
+    imports.wbg.__wbg_length_93debb0e2e184ab6 = function(arg0) {
+        const ret = getObject(arg0).length;
+        return ret;
+    };
     imports.wbg.__wbg_newnoargs_fc5356289219b93b = function(arg0, arg1) {
         const ret = new Function(getStringFromWasm0(arg0, arg1));
         return addHeapObject(ret);
@@ -284,6 +326,10 @@ function getImports() {
         const ret = getObject(arg0).call(getObject(arg1));
         return addHeapObject(ret);
     }, arguments) };
+    imports.wbg.__wbg_entries_b24687f151d83be3 = function(arg0) {
+        const ret = Object.entries(getObject(arg0));
+        return addHeapObject(ret);
+    };
     imports.wbg.__wbg_then_4debc41d4fc92ce5 = function(arg0, arg1, arg2) {
         const ret = getObject(arg0).then(getObject(arg1), getObject(arg2));
         return addHeapObject(ret);
@@ -342,8 +388,8 @@ function getImports() {
         const ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper85 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 22, __wbg_adapter_18);
+    imports.wbg.__wbindgen_closure_wrapper147 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 17, __wbg_adapter_22);
         return addHeapObject(ret);
     };
 
@@ -358,6 +404,7 @@ function finalizeInit(instance, module) {
     wasm = instance.exports;
     init.__wbindgen_wasm_module = module;
     cachedFloat32Memory0 = new Float32Array(wasm.memory.buffer);
+    cachedInt32Memory0 = new Int32Array(wasm.memory.buffer);
     cachedUint8Memory0 = new Uint8Array(wasm.memory.buffer);
 
 
@@ -402,8 +449,19 @@ wasm_bindgen = Object.assign(init, __exports);
 
 })();
 async function setup(sampleRate) {
-    await wasm_bindgen(self.path + "main_bg.wasm")
-    wasm_bindgen.setup(sampleRate, self.path)
+    // Fetch everything in parallel.
+    const loadWasm = wasm_bindgen(self.path + "main_bg.wasm")
+    const loadMetadata = (async () => (await fetch(self.path + "track.json")).json())()
+    const loadData = (async () => (await (await fetch(self.path + "bundle.data")).blob()).arrayBuffer())()
+    const [_, metadata, data] = await Promise.all([loadWasm, loadMetadata, loadData])
+
+    const preloaded = Object.create(null)
+    for (const { filename, start, end } of metadata.files) {
+        const slice = new Uint8Array(data, start, end - start)
+        preloaded[filename] = slice
+    }
+
+    wasm_bindgen.setup(sampleRate, preloaded)
 }
 
 function process(output) {
