@@ -2,7 +2,7 @@ mod utils;
 
 use js_sys::{Uint8Array, Object, Map, Array};
 use wasm_bindgen::prelude::*;
-use aleatora::{osc, pan, SampleRateDependent, Stream, wave, flip};
+use aleatora::{AltIterator, Graph, osc, pan, SampleRateDependent, Stream, wave, flip};
 use web_sys::{WorkerGlobalScope, Worker, console};
 use std::{iter::repeat, collections::HashMap};
 
@@ -21,7 +21,7 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 
 pub fn make_composition(fs: HashMap<String, Vec<u8>>) -> impl Iterator<Item = [f64; 2]> {
     use serde_json::{Value,Value::Object};
-    let bytes = &fs["graph.json"];
+    let bytes = &fs["/graph.json"];
     let text = std::str::from_utf8(bytes).unwrap();
     console::log_2(&"Contents of graph.json".into(), &text.into());
 
@@ -34,17 +34,16 @@ pub fn make_composition(fs: HashMap<String, Vec<u8>>) -> impl Iterator<Item = [f
     }
     let self_: JsValue = js_sys::global().into();
     let self_: WorkerGlobalScope = self_.into();
+
+    // let graph = Graph::<Box<dyn AltIterator<Item = f64>>, f64>::new();
     for filename in map["nodes"].as_array().unwrap() {
-        let filename = filename.as_str().unwrap();
-        let resolve = Closure::new(|_| { console::log_1(&"resolved".into()) });
-        let reject = Closure::new(|_| { console::log_1(&"rejected".into()) });
-        self_.fetch_with_str(filename).then2(&resolve, &reject);
-        resolve.forget();
-        reject.forget();
-        console::log_1(&filename.into());
+        let mut path = "/".to_owned();
+        path.push_str(filename.as_str().unwrap());
+        console::log_2(&"About to load:".into(), &(&path).into());
+        let bytes = &fs[&path];
+        console::log_3(&"node:".into(), &path.into(), &(bytes.len() as u32).into());
     }
-    console::log_1(&"yo".into());
-    let hmm = std::fs::read_to_string("../zero.wav");
+    console::log_1(&"cool".into());
     let zero = include_bytes!("../zero.wav").as_slice();
     let zero = wave::load_mono(zero).into_iter().map(|x| [x, 0.0]);
     let one = include_bytes!("../one.wav").as_slice();
