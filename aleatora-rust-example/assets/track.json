@@ -1,1 +1,9 @@
-{"title":"Deux","artist":"Ian Clester","duration":null,"channels":2}
+{
+    "title":"Deux",
+    "artist":"Ian Clester",
+    "duration": {
+        "min":63.42,
+        "max":null
+    },
+    "channels":2
+}
