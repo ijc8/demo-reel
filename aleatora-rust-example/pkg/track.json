@@ -1,1 +1,1 @@
-{"title":"Bits","artist":"Ian Clester","channels":2,"files":[],"remote_package_size":0}
+{"title":"Deux","artist":"Ian Clester","duration":{"min":63.42,"max":null},"channels":2,"files":[{"filename":"/intro.wav","start":0,"end":3098494},{"filename":"/chorus.wav","start":3098494,"end":7229570},{"filename":"/graph.json","start":7229570,"end":7229821},{"filename":"/verse1-2.wav","start":7229821,"end":11360897},{"filename":"/outro.wav","start":11360897,"end":16782705},{"filename":"/verse1-1.wav","start":16782705,"end":20913781}],"remote_package_size":20913781}

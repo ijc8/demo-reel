@@ -1,8 +1,9 @@
 mod utils;
 
+use js_sys::{Uint8Array, Object, Array};
 use wasm_bindgen::prelude::*;
-use aleatora::{osc, pan, SampleRateDependent, Stream, wave, flip};
-use std::iter::repeat;
+use aleatora::{AltIterator, Graph, wave, GraphIter};
+use std::collections::HashMap;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -17,21 +18,46 @@ static mut ITER: Option<Box<dyn Iterator<Item = [f64; 2]>>> = None;
 // The user of the library can then just write `main` and call `play` at some point to register the stream.
 // (Alternator's `setup` will ultimately call the programmer`s `main`.)
 
-pub fn make_composition() -> impl Iterator<Item = [f64; 2]> {
-    let zero = include_bytes!("../zero.wav").as_slice();
-    let zero = wave::load_mono(zero).into_iter().map(|x| [x, 0.0]);
-    let one = include_bytes!("../one.wav").as_slice();
-    let one = wave::load_mono(one).into_iter().map(|x| [0.0, x]);
-    flip(zero, one).cycle()
-    // let a = pan(osc(repeat(400.hz())).mul(repeat(0.5)), osc(repeat(0.25.hz())).add(repeat(1.0)).mul(repeat(0.5)));
-    // let b = pan(osc(repeat(800.hz())).mul(repeat(0.25)), osc(repeat(0.5.hz())).add(repeat(-1.0)).mul(repeat(0.5)));
-    // a.zip(b).map(|(x, y)| [x[0] + y[0], x[1] + y[1]])
+pub fn make_composition(fs: HashMap<String, Vec<u8>>) -> impl Iterator<Item = [f64; 2]> {
+    let json: serde_json::Value = serde_json::from_slice(&fs["/graph.json"]).unwrap();
+    let json = json.as_object().unwrap();
+
+    // Build graph of clips.
+    let mut graph = Graph::<Box<dyn AltIterator<Item = [f64; 2]>>, f64>::new();
+    for filename in json["nodes"].as_array().unwrap() {
+        let mut path = "/".to_owned();
+        path.push_str(filename.as_str().unwrap());
+        graph.add_node(Box::new(wave::load(fs[&path].as_slice()).into_iter()));
+    }
+
+    for (src, edges) in json["edges"].as_object().unwrap() {
+        let src: u32 = src.parse().unwrap();
+        let edges = edges.as_object().unwrap();
+        for (dst, weight) in edges {
+            let dst: u32 = dst.parse().unwrap();
+            let weight = weight.as_f64().unwrap();
+            graph.add_edge(src.into(), dst.into(), weight);
+        }
+    }
+    GraphIter::new(graph)
 }
 
 #[wasm_bindgen]
-pub fn setup(_sample_rate: f64) {
-    aleatora::set_sample_rate(_sample_rate);
-    let comp = make_composition();
+pub fn setup(sample_rate: f64, files: &Object) {
+    utils::set_panic_hook();
+
+    let mut fs = HashMap::<String, Vec<u8>>::new();
+    for entry in Object::entries(files).iter() {
+        let entry: Array = entry.into();
+        let mut entry = entry.to_vec().into_iter();
+        let filename = entry.next().unwrap();
+        let buffer = entry.next().unwrap();
+        let bytes = Uint8Array::from(buffer).to_vec();
+        fs.insert(filename.as_string().unwrap(), bytes);
+    }
+
+    aleatora::set_sample_rate(sample_rate);
+    let comp = make_composition(fs);
     unsafe {
         ITER = Some(Box::new(comp));
     }
@@ -40,10 +66,13 @@ pub fn setup(_sample_rate: f64) {
 #[wasm_bindgen]
 pub fn process(output: &mut [f32]) -> usize {
     let iter = unsafe { ITER.as_mut().unwrap() };
-    for frame in output.chunks_mut(2) {
-        for (out, sample) in frame.iter_mut().zip(iter.next().unwrap()) {
-            *out = sample as f32;
+    for (i, frame) in output.chunks_mut(2).enumerate() {
+        match iter.next() {
+            Some(x) => for (out, sample) in frame.iter_mut().zip(x) {
+                *out = sample as f32;
+            },
+            None => return i
         }
     }
-    return output.len()
+    output.len()
 }
