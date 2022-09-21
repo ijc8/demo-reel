@@ -2,8 +2,13 @@ let wasm
 const wasmPromise = loadWasm()
 
 async function loadWasm() {
-    const { instance } = await WebAssembly.instantiateStreaming(fetch(self.path + "tune_bg.wasm"))
-    wasm = instance.exports
+    try {
+        wasm = (await WebAssembly.instantiateStreaming(fetch(self.path + "tune_bg.wasm"))).instance.exports
+    } catch {
+        const response = await fetch(self.path + "tune_bg.wasm")
+        const buffer = await response.arrayBuffer()
+        wasm = (await WebAssembly.instantiate(buffer)).instance.exports
+    }
 }
 
 /**
